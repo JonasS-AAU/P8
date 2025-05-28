@@ -14,7 +14,7 @@ def grabDataThigh(filename : str):
     dfThigh = df.loc[df["type"]=="t"]
     return dfThigh
 
-def splitFSRData(df : pd.DataFrame):
+def fixTimeData(df : pd.DataFrame):
     data = deepcopy(df)
     datadict = data.to_dict("list")
     timeValues = []
@@ -28,6 +28,51 @@ def splitFSRData(df : pd.DataFrame):
     datadict["time"] = timeValues
     
     return datadict
+
+def splitData(df : dict, start, stop):
+    datadict = deepcopy(df)
+    x = datadict["time"]
+    startCheck = True
+    endCheck = False
+    if isinstance(start,int) and isinstance(stop,int):
+        for i in range(len(x)):
+            if x[i] < start and startCheck:
+                pass
+            elif x[i] >= start and startCheck:
+                tmpStart = i
+                startCheck = False
+                endCheck = True
+            elif x[i] < stop and endCheck:
+                pass
+            elif x[i] >= stop and endCheck:
+                tmpStop = i
+                endCheck = False
+        dataFrame = pd.DataFrame(datadict)
+        splitDict = dataFrame[tmpStart:tmpStop]
+        splitDict.to_csv("SplitData1.csv")
+    else:
+        tmpStart = []
+        tmpStop = []
+        for j in range(len(start)):
+            startCheck = True
+            endCheck = False
+            for i in range(len(x)):
+                if x[i] < start[j] and startCheck:
+                    pass
+                elif x[i] >= start[j] and startCheck:
+                    tmpStart.append(i)
+                    startCheck = False
+                    endCheck = True
+                elif x[i] < stop[j] and endCheck:
+                    pass
+                elif x[i] >= stop[j] and endCheck:
+                    tmpStop.append(i)
+                    endCheck = False
+        dataFrame = pd.DataFrame(datadict)
+        splitDict = {}
+        for i in range(len(start)):
+            dataFrame[tmpStart[i]:tmpStop[i]].to_csv(f"SplitData{i}.csv")
+        
 
 def plotFSRData(data : dict):
     data = list(data.items())
@@ -56,22 +101,43 @@ def plotGyroLiAccData(data : dict):
 
     for i in range(len(data)):
         if i == 0:
-            x = data[i][1][tmpCutStart:tmpCutEnd]
+            x = data[i][1]#[tmpCutStart:tmpCutEnd]
         if 13<=i<=15:
-            y.append(data[i][1][tmpCutStart:tmpCutEnd])
+            y.append(data[i][1])#[tmpCutStart:tmpCutEnd])
         if 20<=i<=22:
-            y.append(data[i][1][tmpCutStart:tmpCutEnd])
+            y.append(data[i][1])#[tmpCutStart:tmpCutEnd])
     '''
     checkRange = 20
     for i in range(checkRange,len(y[3])-checkRange):
         if sum(abs(number) for number in y[3][i-checkRange:i])/checkRange<1 and sum(abs(number) for number in y[4][i-checkRange:i])/checkRange<1 and sum(abs(number) for number in y[5][i-checkRange:i])/checkRange<1:
             print(f"Standing Still at {x[i]}")
+    
+    k = 0
+    for i in range(len(x)):
+        if x[i-k] < 12:
+            x.pop(i-k)
+            for j in range(len(y)):
+                y[j].pop(i-k)
+            k = k+1
+        elif 32< x[i-k] <35:
+            x.pop(i-k)
+            for j in range(len(y)):
+                y[j].pop(i-k)
+            k = k+1
+        elif 47 < x[i-k]:
+            x.pop(i-k)
+            for j in range(len(y)):
+                y[j].pop(i-k)
+            k = k+1
     '''
 
     fig, ax = plt.subplots(3,3,sharey="col",sharex="col")
     tmp = []
     for i in range(3):
         y.append([y[i][j] * y[i+3][j] for j in range(len(y[i]))])
+
+    
+
     for i in range(3):
         ax[i,0].plot(x,y[i], label = f"Gyro {(i+1)%3}")
     
@@ -87,8 +153,8 @@ def plotGyroLiAccData(data : dict):
     fig.legend()
     plt.show()
 
-
-
+start = [0.7,18.5,39.7,61.5]
+stop = [17.6,38.2,57.3,76]
 filename = "Code\Data\Jakob trappe.txt"
 with open(filename) as f:
     firstline = f.readline()
@@ -96,8 +162,10 @@ with open(filename) as f:
 print(firstline)
 sampleRate = re.findall(r'\d+\.\d+',firstline)
 df = grabDataThigh(filename)
-data = splitFSRData(df)
-plotGyroLiAccData(data)
+data = fixTimeData(df)
+
+splitData(data, start,stop)
+#plotGyroLiAccData(data)
 
 '''
 size = 500
