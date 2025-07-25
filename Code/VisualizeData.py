@@ -9,10 +9,11 @@ from matplotlib.widgets import Slider
 
 
 
-def grabDataThigh(filename : str):
-    df = pd.read_csv(filename,header=1)
+def grabDataThigh(filename : str,header=1):
+    df = pd.read_csv(filename,header=header)
     dfThigh = df.loc[df["type"]=="t"]
     return dfThigh
+
 
 def fixTimeData(df : pd.DataFrame):
     data = deepcopy(df)
@@ -49,7 +50,7 @@ def splitData(df : dict, start, stop):
                 endCheck = False
         dataFrame = pd.DataFrame(datadict)
         splitDict = dataFrame[tmpStart:tmpStop]
-        splitDict.to_csv("SplitData1.csv")
+        splitDict.to_csv("JonasWalk6min.csv")
     else:
         tmpStart = []
         tmpStop = []
@@ -71,7 +72,7 @@ def splitData(df : dict, start, stop):
         dataFrame = pd.DataFrame(datadict)
         splitDict = {}
         for i in range(len(start)):
-            dataFrame[tmpStart[i]:tmpStop[i]].to_csv(f"SplitData{i}.csv")
+            dataFrame[tmpStart[i]:tmpStop[i]].to_csv(f"JonasWalk6min.csv")
         
 
 def plotFSRData(data : dict):
@@ -80,7 +81,7 @@ def plotFSRData(data : dict):
     for i in range(len(data)):
         if i == 0:
             x = data[i][1]
-        if 1<=i<=10:
+        if "FSR" in data[i][0]:
             y.append(data[i][1])
     return x, y
 
@@ -153,18 +154,24 @@ def plotGyroLiAccData(data : dict):
     fig.legend()
     plt.show()
 
-start = [0.7,18.5,39.7,61.5]
-stop = [17.6,38.2,57.3,76]
-filename = "Code\Data\Jakob trappe.txt"
+start = [1.5]
+stop = [313.1]
+filename = "Code\Data\Jonas 6 min.txt"
 with open(filename) as f:
     firstline = f.readline()
     f.close()
 print(firstline)
 sampleRate = re.findall(r'\d+\.\d+',firstline)
-df = grabDataThigh(filename)
-data = fixTimeData(df)
+df = grabDataThigh(filename,0)
+data = df.to_dict("list")
+#data = fixTimeData(df)
 
-splitData(data, start,stop)
+x, y = plotFSRData(data)
+for i in y:
+    plt.plot(x,i)
+
+plt.show()
+#splitData(data, start,stop)
 #plotGyroLiAccData(data)
 
 '''
